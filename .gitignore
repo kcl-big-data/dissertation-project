@@ -47,3 +47,6 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# Raw survey data (contains participant responses - not to be shared publicly)
+data/
