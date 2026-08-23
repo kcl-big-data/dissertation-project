@@ -1,29 +1,310 @@
 ---
-title: "data_analysis"
+title: "Perceived AI-ness in Advertising: Consumer Perceptions of 2026 Super Bowl Commercials"
 output: pdf_document
 date: "2026-08-21"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-## R Markdown
+## Overview
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+This study examines whether consumers' own subjective impression that an advertisement was created using AI (= perceived AI-ness) is associated with how they evaluate that advertisement and the advertised brand. Survey data (N=236) was collected using two real advertisements from the 2026 Super Bowl (Svedka & Liquid Death), each evaluated by every respondent. 
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Set-up
 
-```{r cars}
-summary(cars)
+```{r}
+library(dplyr)
+library(tidyr)
+library(psych)
+library(sandwich)
+library(lmtest)
+library(ggplot2)
 ```
 
-## Including Plots
+## Load Data
 
-You can also embed plots, for example:
+The raw dataset contains 236 responses, collected via Qualtrics and cleaned to exclude incomplete responses and those with implausibly short completion times (under 3 minutes).
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+df <- read.csv("data/survey_raw_data.csv", stringsAsFactors = FALSE)
+nrow(df)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Define Scale Levels
+
+Survey responses were exported as text labels rather than numeric values. The vectors below specify the correct response order for each scale used in the questionnaire, and are used in the next step to convert these text labels into numeric scores. 
+
+```{r}
+likert_levels <- c("Strongly disagree", "Disagree",
+                   "Somewhat disagree", "Neither agree nor disagree",
+                   "Somewhat agree", "Agree", "Strongly agree")
+
+fam_levels <- c("Not familiar at all: I don't recognise this brand",
+                "Slightly familiar: I recognise the name, but know little else about it",
+                "Somewhat familiar: I know the brand and their products, but don't recall purchasing or consuming them",
+                "Moderately familiar: I have purchased or consumed their products before",
+                "Quite familiar: I have purchased/consumed their products and have also seen their advertising or social media content",
+                "Very familiar: I regularly purchase/consume their products and/or actively follow their content",
+                "Extremely familiar: I am a loyal or frequent customer and actively engage with their brand content (e.g. likes, comments, shares)")
+
+feel_levels <- c("Strongly negative", "Negative",
+                 "Somewhat negative", "Neither positive nor negative",
+                 "Somewhat positive", "Positive", "Strongly positive")
+
+badgood_levels <- c("Extremely bad", "Quite bad",
+                    "Slightly bad", "Neither good nor bad",
+                    "Slightly good", "Quite good", "Extremely good")
+
+pleasant_levels <- c("Extremely unpleasant", "Quite unpleasant",
+                     "Slightly unpleasant", "Neither pleasant nor unpleasant",
+                     "Slightly pleasant", "Quite pleasant", "Extremely pleasant")
+
+fav_levels <- c("Extremely unfavourable", "Quite unfavourable",
+                "Slightly unfavourable", "Neither favourable nor unfavourable",
+                "Slightly favourable", "Quite favourable", "Extremely favourable")
+
+appeal_levels <- c("Extremely unappealing", "Quite unappealing",
+                   "Slightly unappealing", "Neither appealing nor unappealing",
+                   "Slightly appealing", "Quite appealing", "Extremely appealing")
+
+```
+
+## Recode Text Responses to Numeric
+
+Each text response is converted to its corresponding numeric position (1-7) using the scale definitions above. The binary "seen before" items are also recoded from Yes/No to 1/0 for use as a covariate. 
+
+```{r}
+df <- df %>%
+  mutate(
+    across(c(AIN1_SV, AIN2_SV, AIN3_SV, AIN1_LD, AIN2_LD, AIN3_LD,
+             CREA1_SV, CREA2_SV, CREA3_SV, CREA1_LD, CREA2_LD, CREA3_LD,
+             AUTH1_SV, AUTH2_SV, AUTH3_SV, AUTH1_LD, AUTH2_LD, AUTH3_LD,
+             AIATT1, AIATT2, AIATT3, AIATT4, AIATT5),
+           ~ as.integer(factor(., levels = likert_levels))),
+
+    SVFAM = as.integer(factor(SVFAM, levels = fam_levels)),
+    LDFAM = as.integer(factor(LDFAM, levels = fam_levels)),
+    SVFAV = as.integer(factor(SVFAV, levels = feel_levels)),
+    LDFAV = as.integer(factor(LDFAV, levels = feel_levels)),
+
+    ADATT1_SV = as.integer(factor(ADATT1_SV, levels = badgood_levels)),
+    ADATT1_LD = as.integer(factor(ADATT1_LD, levels = badgood_levels)),
+    ADATT2_SV = as.integer(factor(ADATT2_SV, levels = pleasant_levels)),
+    ADATT2_LD = as.integer(factor(ADATT2_LD, levels = pleasant_levels)),
+
+    BRATT1_SV = as.integer(factor(BRATT1_SV, levels = fav_levels)),
+    BRATT1_LD = as.integer(factor(BRATT1_LD, levels = fav_levels)),
+    BRATT2_SV = as.integer(factor(BRATT2_SV, levels = appeal_levels)),
+    BRATT2_LD = as.integer(factor(BRATT2_LD, levels = appeal_levels)),
+
+    # Prior exposure (Yes/No -> 1/0)
+    SEEN_SV = if_else(SEEN_SV == "Yes", 1L, 0L),
+    SEEN_LD = if_else(SEEN_LD == "Yes", 1L, 0L)
+  )
+```
+
+## Reliability Check: Perceived AI-ness
+
+The perceived AI-ness scale included a reverse-scored item (".. a human creative team was primarily responsible.."), which is reverse-coded below and tested alongside the two other items. This item showed a markedly low corrected item-total correlation, and reliability improved substantially when it was excluded. The final composite therefore uses only the first two items.
+
+```{r}
+df <- df %>%
+  mutate(AIN3_SV_r = 8 - AIN3_SV,
+         AIN3_LD_r = 8 - AIN3_LD)
+
+# 3-item version (reverse-scored item included)
+psych::alpha(df %>% select(AIN1_SV, AIN2_SV, AIN3_SV_r))
+psych::alpha(df %>% select(AIN1_LD, AIN2_LD, AIN3_LD_r))
+
+# 2-item version (reverse-scored item excluded) -- final decision
+
+psych::alpha(df %>% select(AIN1_SV, AIN2_SV))
+psych::alpha(df %>% select(AIN1_LD, AIN2_LD))
+```
+
+## Create Composite Variables
+
+Composite scores for each construct are calculated by averaging their constituent items.
+
+```{r}
+df <- df %>%
+  mutate(
+    AIN_SV = (AIN1_SV + AIN2_SV) / 2,
+    AIN_LD = (AIN1_LD + AIN2_LD) / 2,
+    CREA_SV = (CREA1_SV + CREA2_SV + CREA3_SV) / 3,
+    CREA_LD = (CREA1_LD + CREA2_LD + CREA3_LD) / 3,
+    AUTH_SV = (AUTH1_SV + AUTH2_SV + AUTH3_SV) / 3,
+    AUTH_LD = (AUTH1_LD + AUTH2_LD + AUTH3_LD) / 3,
+    ADATT_SV = (ADATT1_SV + ADATT2_SV) / 2,
+    ADATT_LD = (ADATT1_LD + ADATT2_LD) / 2,
+    BRATT_SV = (BRATT1_SV + BRATT2_SV) / 2,
+    BRATT_LD = (BRATT1_LD + BRATT2_LD) / 2,
+    AIATT = (AIATT1 + AIATT2 + AIATT3 + AIATT4 + AIATT5) / 5
+  )
+```
+
+## Reliability Check (Remaining Composites)
+
+Reliability for all remaining composite measures is assessed using Cronbach's alpha.
+
+```{r}
+psych::alpha(df %>% select(CREA1_SV, CREA2_SV, CREA3_SV))
+psych::alpha(df %>% select(CREA1_LD, CREA2_LD, CREA3_LD))
+psych::alpha(df %>% select(AUTH1_SV, AUTH2_SV, AUTH3_SV))
+psych::alpha(df %>% select(AUTH1_LD, AUTH2_LD, AUTH3_LD))
+psych::alpha(df %>% select(ADATT1_SV, ADATT2_SV))
+psych::alpha(df %>% select(ADATT1_LD, ADATT2_LD))
+psych::alpha(df %>% select(BRATT1_SV, BRATT2_SV))
+psych::alpha(df %>% select(BRATT1_LD, BRATT2_LD))
+psych::alpha(df %>% select(AIATT1, AIATT2, AIATT3, AIATT4, AIATT5))
+```
+
+## Descriptive Statistics
+
+Mean and standard deviation for each composite variable are calculated separately by advertisement.
+
+```{r}
+df %>%
+  summarise(
+    AIN_SV_M = mean(AIN_SV),  AIN_SV_SD = sd(AIN_SV),
+    AIN_LD_M = mean(AIN_LD),  AIN_LD_SD = sd(AIN_LD),
+    CREA_SV_M = mean(CREA_SV), CREA_SV_SD = sd(CREA_SV),
+    CREA_LD_M = mean(CREA_LD), CREA_LD_SD = sd(CREA_LD),
+    AUTH_SV_M = mean(AUTH_SV), AUTH_SV_SD = sd(AUTH_SV),
+    AUTH_LD_M = mean(AUTH_LD), AUTH_LD_SD = sd(AUTH_LD),
+    ADATT_SV_M = mean(ADATT_SV), ADATT_SV_SD = sd(ADATT_SV),
+    ADATT_LD_M = mean(ADATT_LD), ADATT_LD_SD = sd(ADATT_LD),
+    BRATT_SV_M = mean(BRATT_SV), BRATT_SV_SD = sd(BRATT_SV),
+    BRATT_LD_M = mean(BRATT_LD), BRATT_LD_SD = sd(BRATT_LD)
+  )
+```
+
+## Wide-to-Long Transformation
+
+Since each respondent evaluated both advertisements (Svedka & Liquid Death), the dataset is reshaped from one row per respondent to one row per respondent-ad pair, enabling pooled ad-level analysis (472 observations from 236 respondents).
+
+```{r}
+df <- df %>% mutate(RespondentID = row_number())
+
+df_long <- df %>%
+  pivot_longer(
+    cols = c(AIN_SV, AIN_LD, CREA_SV, CREA_LD, AUTH_SV, AUTH_LD,
+             ADATT_SV, ADATT_LD, BRATT_SV, BRATT_LD, SEEN_SV, SEEN_LD),
+    names_to = c(".value", "Brand"),
+    names_sep = "_"
+  )
+
+nrow(df_long)
+table(df_long$Brand)
+```
+
+## Derive Brand-matched Covariates
+
+Prior brand familiarity and favourability were measured for both brands before ad exposure. Each row is matched to the familiarity/favourability value corresponding to the brand.
+
+```{r}
+df_long <- df_long %>%
+  mutate(
+    FAM = if_else(Brand == "SV", SVFAM, LDFAM),
+    FAV = if_else(Brand == "SV", SVFAV, LDFAV)
+  )
+```
+
+## RQ 1 (Regression Models)
+
+The first research question of this study explores how consumers’ perceived AI-ness of advertisements relates to their evaluations of those advertisements.
+
+RQ1-1. How is consumers’ perceived AI-ness of advertisements associated with their perceived creativity of those advertisements?
+RQ1-2. How is consumers’ perceived AI-ness of advertisements associated with their perceived authenticity of those advertisements?
+RQ1-3. How is consumers’ perceived AI-ness of advertisements associated with their overall attitude toward those advertisements?
+
+Three of these sub-questions are tested using multiple regression, with perceived ad creativity, perceived ad authenticity, and ad attitude each regressed on perceived AI-ness, while controlling for prior brand familiarity, prior brand favourability, and prior exposure to the specific advertisement. As each respondent contributed two evaluations, standard errors are clustered by respondent to account for non-independence.
+
+```{r}
+model_rq1_1 <- lm(CREA ~ AIN + FAM + FAV + SEEN, data = df_long)
+coeftest(model_rq1_1, vcov = vcovCL(model_rq1_1, cluster = ~RespondentID))
+
+model_rq1_2 <- lm(AUTH ~ AIN + FAM + FAV + SEEN, data = df_long)
+coeftest(model_rq1_2, vcov = vcovCL(model_rq1_2, cluster = ~RespondentID))
+
+model_rq1_3 <- lm(ADATT ~ AIN + FAM + FAV + SEEN, data = df_long)
+coeftest(model_rq1_3, vcov = vcovCL(model_rq1_3, cluster = ~RespondentID))
+
+summary(model_rq1_1)$r.squared
+summary(model_rq1_2)$r.squared
+summary(model_rq1_3)$r.squared
+```
+
+## Figure 1: Coefficient Plot
+
+The plot below visualises the association between perceived AI-ness and each ad-level outcome, with error bars representing 95% confidence intervals based on the clustered standard errors above.
+
+```{r}
+coef_data <- data.frame(
+  Outcome = c("Creativity", "Authenticity", "Ad Attitude"),
+  Estimate = c(coef(model_rq1_1)["AIN"], coef(model_rq1_2)["AIN"], coef(model_rq1_3)["AIN"]),
+  SE = c(
+    coeftest(model_rq1_1, vcov = vcovCL(model_rq1_1, cluster = ~RespondentID))["AIN", "Std. Error"],
+    coeftest(model_rq1_2, vcov = vcovCL(model_rq1_2, cluster = ~RespondentID))["AIN", "Std. Error"],
+    coeftest(model_rq1_3, vcov = vcovCL(model_rq1_3, cluster = ~RespondentID))["AIN", "Std. Error"]
+  )
+)
+coef_data$Outcome <- factor(coef_data$Outcome, levels = c("Creativity", "Authenticity", "Ad Attitude"))
+coef_data$lower <- coef_data$Estimate - 1.96 * coef_data$SE
+coef_data$upper <- coef_data$Estimate + 1.96 * coef_data$SE
+
+ggplot(coef_data, aes(x = Outcome, y = Estimate)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.5) +
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.15, linewidth = 0.7, color = "#2C3E50") +
+  geom_point(size = 3.5, color = "#2C3E50") +
+  labs(y = "Unstandardised coefficient (b)", x = NULL,
+       subtitle = "Error bars represent 95% CIs (respondent-clustered robust SE)") +
+  theme_minimal(base_size = 13) +
+  theme(plot.subtitle = element_text(size = 10, color = "grey40", hjust = 0.5),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        axis.text.x = element_text(size = 12, face = "bold"))
+```
+
+## Sensitivity Analysis
+
+To assess whether pooled associations were driven disproportionately by one advertisement, each model was additionally re-estimated separately for Svedka and Liquid Death. 
+
+```{r}
+# Sensitivity Analysis: Svedka only
+df_sv <- df_long %>% filter(Brand == "SV")
+
+model_sv_crea <- lm(CREA ~ AIN + FAM + FAV + SEEN, data = df_sv)
+summary(model_sv_crea)$coefficients["AIN", ]
+
+model_sv_auth <- lm(AUTH ~ AIN + FAM + FAV + SEEN, data = df_sv)
+summary(model_sv_auth)$coefficients["AIN", ]
+
+model_sv_adatt <- lm(ADATT ~ AIN + FAM + FAV + SEEN, data = df_sv)
+summary(model_sv_adatt)$coefficients["AIN", ]
+```
+
+```{r}
+# Sensitivity Analysis: Liquid Death only
+df_ld <- df_long %>% filter(Brand == "LD")
+
+model_ld_crea <- lm(CREA ~ AIN + FAM + FAV + SEEN, data = df_ld)
+summary(model_ld_crea)$coefficients["AIN", ]
+
+model_ld_auth <- lm(AUTH ~ AIN + FAM + FAV + SEEN, data = df_ld)
+summary(model_ld_auth)$coefficients["AIN", ]
+
+model_ld_adatt <- lm(ADATT ~ AIN + FAM + FAV + SEEN, data = df_ld)
+summary(model_ld_adatt)$coefficients["AIN", ]
+```
+
+## RQ 2 (Regression Models)
+
+The second research question of this study explores how consumers’ perceived AI-ness of advertisements relates to their evaluations of the advertised brand(s).
+
+RQ2-1. How is consumers’ perceived AI-ness of advertisements associated with their attitude toward the advertised brands?
+RQ2-2. Does perceived ad authenticity mediate the relationship between perceived AI-ness and brand attitude?
+
+
