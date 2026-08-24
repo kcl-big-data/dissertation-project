@@ -1,7 +1,7 @@
 ---
 title: "Perceived AI-ness in Advertising: Consumer Perceptions of 2026 Super Bowl Commercials"
 output: pdf_document
-date: "2026-08-21"
+date: "2026-08-25"
 ---
 
 ```{r setup, include=FALSE}
@@ -10,9 +10,9 @@ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 ## Overview
 
-This study examines whether consumers' own subjective impression that an advertisement was created using AI (= perceived AI-ness) is associated with how they evaluate that advertisement and the advertised brand. Survey data (N=236) was collected using two real advertisements from the 2026 Super Bowl (Svedka & Liquid Death), each evaluated by every respondent. 
+This study examines whether consumers' own subjective impression that an advertisement was created using AI (**perceived AI-ness**) is associated with how they evaluate that advertisement and the advertised brand. Survey data (N=236) was collected using two real advertisement clips from the 2026 Super Bowl (Svedka & Liquid Death), each evaluated by every respondent. 
 
-## Set-up
+## R Set-up
 
 ```{r}
 library(dplyr)
@@ -37,9 +37,7 @@ nrow(df)
 Survey responses were exported as text labels rather than numeric values. The vectors below specify the correct response order for each scale used in the questionnaire, and are used in the next step to convert these text labels into numeric scores. 
 
 ```{r}
-likert_levels <- c("Strongly disagree", "Disagree",
-                   "Somewhat disagree", "Neither agree nor disagree",
-                   "Somewhat agree", "Agree", "Strongly agree")
+likert_levels <- c("Strongly disagree", "Disagree", "Somewhat disagree", "Neither agree nor disagree", "Somewhat agree", "Agree", "Strongly agree")
 
 fam_levels <- c("Not familiar at all: I don't recognise this brand",
                 "Slightly familiar: I recognise the name, but know little else about it",
@@ -49,25 +47,15 @@ fam_levels <- c("Not familiar at all: I don't recognise this brand",
                 "Very familiar: I regularly purchase/consume their products and/or actively follow their content",
                 "Extremely familiar: I am a loyal or frequent customer and actively engage with their brand content (e.g. likes, comments, shares)")
 
-feel_levels <- c("Strongly negative", "Negative",
-                 "Somewhat negative", "Neither positive nor negative",
-                 "Somewhat positive", "Positive", "Strongly positive")
+feel_levels <- c("Strongly negative", "Negative", "Somewhat negative", "Neither positive nor negative", "Somewhat positive", "Positive", "Strongly positive")
 
-badgood_levels <- c("Extremely bad", "Quite bad",
-                    "Slightly bad", "Neither good nor bad",
-                    "Slightly good", "Quite good", "Extremely good")
+badgood_levels <- c("Extremely bad", "Quite bad", "Slightly bad", "Neither good nor bad", "Slightly good", "Quite good", "Extremely good")
 
-pleasant_levels <- c("Extremely unpleasant", "Quite unpleasant",
-                     "Slightly unpleasant", "Neither pleasant nor unpleasant",
-                     "Slightly pleasant", "Quite pleasant", "Extremely pleasant")
+pleasant_levels <- c("Extremely unpleasant", "Quite unpleasant", "Slightly unpleasant", "Neither pleasant nor unpleasant", "Slightly pleasant", "Quite pleasant", "Extremely pleasant")
 
-fav_levels <- c("Extremely unfavourable", "Quite unfavourable",
-                "Slightly unfavourable", "Neither favourable nor unfavourable",
-                "Slightly favourable", "Quite favourable", "Extremely favourable")
+fav_levels <- c("Extremely unfavourable", "Quite unfavourable", "Slightly unfavourable", "Neither favourable nor unfavourable", "Slightly favourable", "Quite favourable", "Extremely favourable")
 
-appeal_levels <- c("Extremely unappealing", "Quite unappealing",
-                   "Slightly unappealing", "Neither appealing nor unappealing",
-                   "Slightly appealing", "Quite appealing", "Extremely appealing")
+appeal_levels <- c("Extremely unappealing", "Quite unappealing", "Slightly unappealing", "Neither appealing nor unappealing", "Slightly appealing", "Quite appealing", "Extremely appealing")
 
 ```
 
@@ -107,7 +95,7 @@ df <- df %>%
 
 ## Reliability Check: Perceived AI-ness
 
-The perceived AI-ness scale included a reverse-scored item (".. a human creative team was primarily responsible.."), which is reverse-coded below and tested alongside the two other items. This item showed a markedly low corrected item-total correlation, and reliability improved substantially when it was excluded. The final composite therefore uses only the first two items.
+The perceived AI-ness scale included a reverse-scored item ("A human creative team was primarily responsible for producing the visual elements of this advertisement"), which is reverse-coded below and tested alongside the two other items. This item showed a markedly low corrected item-total correlation, and reliability improved substantially when it was excluded. The final composite therefore uses only the first two items.
 
 ```{r}
 df <- df %>%
@@ -126,7 +114,7 @@ psych::alpha(df %>% select(AIN1_LD, AIN2_LD))
 
 ## Create Composite Variables
 
-Composite scores for each construct are calculated by averaging their constituent items.
+Composite scores for each construct were calculated by averaging their constituent items.
 
 ```{r}
 df <- df %>%
@@ -147,7 +135,7 @@ df <- df %>%
 
 ## Reliability Check (Remaining Composites)
 
-Reliability for all remaining composite measures is assessed using Cronbach's alpha.
+Reliability for all remaining composite measures was assessed using Cronbach's alpha.
 
 ```{r}
 psych::alpha(df %>% select(CREA1_SV, CREA2_SV, CREA3_SV))
@@ -163,7 +151,7 @@ psych::alpha(df %>% select(AIATT1, AIATT2, AIATT3, AIATT4, AIATT5))
 
 ## Descriptive Statistics
 
-Mean and standard deviation for each composite variable are calculated separately by advertisement.
+Mean and standard deviation for each composite variable were calculated separately by advertisement.
 
 ```{r}
 df %>%
@@ -212,13 +200,15 @@ df_long <- df_long %>%
   )
 ```
 
-## RQ 1 (Regression Models)
+## RQ1: Perceived AI-ness and Ad-level Evaluations
 
 The first research question of this study explores how consumers’ perceived AI-ness of advertisements relates to their evaluations of those advertisements.
 
-RQ1-1. How is consumers’ perceived AI-ness of advertisements associated with their perceived creativity of those advertisements?
-RQ1-2. How is consumers’ perceived AI-ness of advertisements associated with their perceived authenticity of those advertisements?
-RQ1-3. How is consumers’ perceived AI-ness of advertisements associated with their overall attitude toward those advertisements?
+**RQ1-1. How is consumers’ perceived AI-ness of advertisements associated with their perceived creativity of those advertisements?**
+
+**RQ1-2. How is consumers’ perceived AI-ness of advertisements associated with their perceived authenticity of those advertisements?**
+
+**RQ1-3. How is consumers’ perceived AI-ness of advertisements associated with their overall attitude toward those advertisements?**
 
 Three of these sub-questions are tested using multiple regression, with perceived ad creativity, perceived ad authenticity, and ad attitude each regressed on perceived AI-ness, while controlling for prior brand familiarity, prior brand favourability, and prior exposure to the specific advertisement. As each respondent contributed two evaluations, standard errors are clustered by respondent to account for non-independence.
 
@@ -237,7 +227,9 @@ summary(model_rq1_2)$r.squared
 summary(model_rq1_3)$r.squared
 ```
 
-## Figure 1: Coefficient Plot
+Across all three outcomes, higher perceived AI-ness was associated with less favourable evaluations. A one-point increase in perceived AI-ness was associated with a 0.33-point decrease in perceived ad creativity (b = -0.328, SE = .036, p < .001), a 0.39-point decrease in perceived ad authenticity (b = -0.392, SE = .042, p < .001), and a 0.43-point decrease in ad attitude (b = -0.426, SE = .041, p < .001), controlling for covariates above. The models explained 18.2% to 24.2% of the variance across the three outcomes. Thus, RQ1-1 to RQ1-3 reveal a **consistent negative association between perceived AI-ness and each dimension of ad-level evaluations**. 
+
+### Figure 1: Coefficient Plot
 
 The plot below visualises the association between perceived AI-ness and each ad-level outcome, with error bars representing 95% confidence intervals based on the clustered standard errors above.
 
@@ -268,12 +260,12 @@ ggplot(coef_data, aes(x = Outcome, y = Estimate)) +
         axis.text.x = element_text(size = 12, face = "bold"))
 ```
 
-## Sensitivity Analysis
+### Sensitivity Analysis (SV/LD)
 
 To assess whether pooled associations were driven disproportionately by one advertisement, each model was additionally re-estimated separately for Svedka and Liquid Death. 
 
 ```{r}
-# Sensitivity Analysis: Svedka only
+# Sensitivity Analysis: SV only
 df_sv <- df_long %>% filter(Brand == "SV")
 
 model_sv_crea <- lm(CREA ~ AIN + FAM + FAV + SEEN, data = df_sv)
@@ -287,7 +279,7 @@ summary(model_sv_adatt)$coefficients["AIN", ]
 ```
 
 ```{r}
-# Sensitivity Analysis: Liquid Death only
+# Sensitivity Analysis: LD only
 df_ld <- df_long %>% filter(Brand == "LD")
 
 model_ld_crea <- lm(CREA ~ AIN + FAM + FAV + SEEN, data = df_ld)
@@ -300,11 +292,367 @@ model_ld_adatt <- lm(ADATT ~ AIN + FAM + FAV + SEEN, data = df_ld)
 summary(model_ld_adatt)$coefficients["AIN", ]
 ```
 
-## RQ 2 (Regression Models)
+The negative association between perceived AI-ness and all three outcomes was replicated within both advertisements considered individually (Svedka: b = -0.520 to -0.263, ps < .01; Liquid Death: b = -0.266 to -0.187, ps < .001). This indicates that the pooled findings were not solely attributable to differences between the two advertisements, but were also observed within each stimulus. The associations were descriptively larger in magnitude for Svedka than for Liquid Death across all three outcomes, particularly for ad attitude (b = -0.520 vs. -0.252). However, these between-ad differences were not formally tested and should therefore be interpreted descriptively.
 
-The second research question of this study explores how consumers’ perceived AI-ness of advertisements relates to their evaluations of the advertised brand(s).
+## RQ2: Perceived AI-ness and Brand Attitude
 
-RQ2-1. How is consumers’ perceived AI-ness of advertisements associated with their attitude toward the advertised brands?
-RQ2-2. Does perceived ad authenticity mediate the relationship between perceived AI-ness and brand attitude?
+The second research question of this study explores how consumers’ perceived AI-ness of advertisements relates to their evaluations of the advertised brand(s), and whether this relationship is mediated by perceived ad authenticity.
 
+**RQ2-1. How is consumers’ perceived AI-ness of advertisements associated with their attitude toward the advertised brands?**
+
+**RQ2-2. Does perceived ad authenticity mediate the relationship between perceived AI-ness and brand attitude?**
+
+The same covariates (prior brand familiarity/favourability, prior ad exposure) are entered consistently across all component models.
+
+```{r}
+library(mediation)
+```
+
+### RQ2-1: Direct Association (Perceived AI-ness -> Brand Attitude)
+
+The direct association between perceived AI-ness and brand attitude is tested using the same pooled, respondent-clustered approach as RQ1.
+
+```{r}
+model_rq2_1 <- lm(BRATT ~ AIN + FAM + FAV + SEEN, data = df_long)
+coeftest(model_rq2_1, vcov = vcovCL(model_rq2_1, cluster = ~RespondentID))
+summary(model_rq2_1)$r.squared
+```
+
+Higher perceived AI-ness was significantly associated with less favourable brand attitude (b = -0.353, SE = .041, p < .001). A one-point increase in perceived AI-ness was associated with a 0.35-point decrease in brand attitude, with the model explaining 21.8% of the variance. Hence, RQ2-1 indicates that the **negative association identified at the advertisement level in RQ1** also extends to consumers’ **brand-level evaluations**.
+
+### RQ2-2: Mediation Analysis (Perceived AI-nes -> Authenticity -> Brand Attitude)
+
+Two component models are estimated: the mediator model (perceived ad authenticity regressed on perceived AI-ness and covariates) and the outcome model (brand attitude regressed on perceived AI-ness, perceived ad authenticity, and covariates). These are combined using 'mediate()', which computes the indirect effect via 5,000 non-parametric bootstrap resamples with 95% confidence intervals.
+
+'control.value' and 'treat.value' are set to 4 and 5 respectively, rather than the function's default of 0 and 1, since perceived AI-ness is measured on a 1-7 scale and 0 falls outside this range. This anchors the interpretation of all reported effects to a one-point increase in AI-ness within the scale's actual range. 
+
+```{r}
+set.seed(2026)
+
+model_a_path <- lm(AUTH ~ AIN + FAM + FAV + SEEN, data = df_long)
+model_b_path <- lm(BRATT ~ AIN + AUTH + FAM + FAV + SEEN, data = df_long)
+
+mediation_result <- mediation::mediate(
+  model.m = model_a_path,
+  model.y = model_b_path,
+  treat = "AIN",
+  mediator = "AUTH",
+  control.value = 4,
+  treat.value = 5,
+  boot = TRUE,
+  sims = 5000
+)
+
+summary(mediation_result)
+```
+
+The key quantities reported are: **ACME** (the indirect effect of perceived AI-ness on brand attitude via authenticity), **ADE** (the remaining direct effect after accounting for authenticity), and **Total Effect** (the sum of the indirect and direct effects).
+
+A significant negative indirect association was observed through perceived ad authenticity (ACME = -0.293, 95% CI [-0.359, -0.232], p < .001). After accounting for this indirect pathway, the remaining direct association between perceived AI-ness and brand attitude was substantially reduced and was not statistically significant (ADE = -0.060, 95% CI [-0.128, 0.007], p = .081; total effect = -0.353, 95% CI [-0.431, -0.275], p < .001). The estimated mediation pathway is visualised in Figure 2. These results suggest that **perceived ad authenticity** accounted for a substantial portion of the observed **negative relationship between perceived AI-ness and brand attitude**, a pattern conventionally described as approaching full mediation.
+
+### Sensitivity Check: Mediation by Advertisement
+
+Because each respondent contributes only one row per ad-specific dataset, these models avoid the within-respondent dependence inherent to the pooled mediation model above. To assess whether the pooled mediation pattern was disproportionately driven by either stimulus, the mediation model was re-estimated separately for Svedka and Liquid Death. The same 'control.value' / 'treat.value' anchoring is used for consistency.
+
+```{r}
+model_a_sv <- lm(AUTH ~ AIN + FAM + FAV + SEEN, data = df_sv)
+model_b_sv <- lm(BRATT ~ AIN + AUTH + FAM + FAV + SEEN, data = df_sv)
+
+# SV Only
+mediation_sv <- mediation::mediate(
+  model.m = model_a_sv,
+  model.y = model_b_sv,
+  treat = "AIN",
+  mediator = "AUTH",
+  control.value = 4,
+  treat.value = 5,
+  boot = TRUE,
+  sims = 5000
+)
+summary(mediation_sv)
+
+# LD only
+model_a_ld <- lm(AUTH ~ AIN + FAM + FAV + SEEN, data = df_ld)
+model_b_ld <- lm(BRATT ~ AIN + AUTH + FAM + FAV + SEEN, data = df_ld)
+
+mediation_ld <- mediation::mediate(
+  model.m = model_a_ld,
+  model.y = model_b_ld,
+  treat = "AIN",
+  mediator = "AUTH",
+  control.value = 4,
+  treat.value = 5,
+  boot = TRUE,
+  sims = 5000
+)
+summary(mediation_ld)
+```
+
+The indirect association through authenticity remained significant for both Svedka (ACME = -0.266, 95% CI [-0.396, -0.146], p < .001) and Liquid Death (ACME = -0.190, 95% CI [-0.275, -0.109], p < .001). The presence of a significant indirect pathway within both advertisements provides additional support for the pooled finding, indicating that it was not solely an artefact of combining two stimuli with different levels of perceived AI-ness.
+
+The remaining direct association nevertheless differed descriptively between the two models. For Liquid Death, the ADE was small and non-significant (ADE = -0.031, 95% CI [-0.124, 0.057], p = .483), whereas for Svedka a significant negative direct association remained after accounting for authenticity (ADE = -0.188, 95% CI [-0.320, -0.054], p = .007). The estimated proportion mediated was correspondingly higher for Liquid Death (0.86) than for Svedka (0.59). 
+
+Hence, while authenticity represented a significant pathway in both cases, it accounted for a numerically larger share of the overall association for Liquid Death, whereas perceived AI-ness retained an additional association with brand attitude for Svedka beyond that accounted for by authenticity. This between-ad difference was not formally tested and is therefore interpreted descriptively, rather than as evidence of a moderated mediation effect. 
+
+### Figure 2: Mediation Path Diagram
+
+To visualise the mediation model, the coefficients for three constituent paths are extracted from the component regression models estimated earlier: the a-path (perceived AI-ness predicting authenticity), the b-path (authenticity predicting brand attitude, controlling for perceived AI-ness), and the c'-path (the remaining direct association between perceived AI-ness and brand attitude, controlling for authenticity).
+
+```{r}
+summary(model_a_path)$coefficients["AIN", ]
+summary(model_b_path)$coefficients[c("AUTH","AIN"), ]  
+```
+
+These coefficients (a = -0.392, b = 0.747, c' = -0.060) are used to construct Figure 2, a path diagram illustrating the mediation model reported previously.
+
+```{r}
+library(grid)
+
+ggplot() +
+  # Boxes
+  annotate("rect", xmin = 1.0, xmax = 2.8, ymin = 2.15, ymax = 2.85, fill = "white", colour = "#2C3E50", linewidth = 0.7
+  ) +
+  annotate("rect", xmin = 3.7, xmax = 5.5, ymin = 3.82, ymax = 4.52, fill = "white", colour = "#2C3E50", linewidth = 0.7
+  ) +
+  annotate("rect", xmin = 6.4, xmax = 8.2, ymin = 2.15, ymax = 2.85, fill = "white", colour = "#2C3E50",linewidth = 0.7
+  ) +
+  # Box labels
+  annotate("text", x = 1.9, y = 2.5, label = "Perceived\nAI-ness", size = 4.1, fontface = "bold", lineheight = 1.05
+  ) +
+  annotate("text", x = 4.6, y = 4.17, label = "Perceived Ad\nAuthenticity", size = 4.1, fontface = "bold", lineheight = 1.05
+  ) +
+  annotate("text", x = 7.3, y = 2.5, label = "Brand\nAttitude", size = 4.1, fontface = "bold", lineheight = 1.05
+  ) +
+  # a path
+  annotate("segment", x = 2.8, xend = 3.66, y = 2.8, yend = 3.76, colour = "#2C3E50", linewidth = 0.8, arrow = arrow(length = unit(0.15, "cm"))
+  ) +
+  # b path
+  annotate("segment", x = 5.54, xend = 6.32, y = 3.76, yend = 2.88, colour = "#2C3E50", linewidth = 0.8, arrow = arrow(length = unit(0.15, "cm"))
+  ) +
+  # c' path
+  annotate("segment", x = 2.8, xend = 6.32, y = 2.48, yend = 2.48, colour = "#2C3E50", linewidth = 0.8, arrow = arrow(length = unit(0.15, "cm"))
+  ) +
+  # Path labels
+  annotate("text", x = 2.65, y = 3.45, label = "a = -0.392", size = 4.0, hjust = 1
+  ) +
+  annotate("text", x = 6.55, y = 3.45, label = "b = 0.747", size = 4.0, hjust = 0
+  ) +
+  annotate("text", x = 4.6, y = 2.14, label = "c' = -0.060", size = 4.0
+  ) +
+  # Indirect effect
+  annotate("text", x = 4.6, y = 1.15, label = "Indirect effect (ACME) = -0.293", size = 4.1, fontface = "bold"
+  ) +
+  annotate("text", x = 4.6, y = 0.78, label = "95% CI [-0.359, -0.232], p < .001", size = 3.8, colour = "grey40"
+  ) +
+  coord_cartesian(xlim = c(0.6, 8.6), ylim = c(0.35, 4.8), clip = "off"
+  ) +
+  labs(subtitle = "Indirect effect estimated using 5,000 bootstrap simulations"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(plot.subtitle = element_text(size = 10, colour = "grey40", hjust = 0.5),
+    panel.grid = element_blank(),
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    plot.margin = margin(15, 20, 15, 20)
+  )
+  
+```
+
+## RQ3: The Moderating Role of AI Attitude
+
+RQ3 examines whether consumers’ general attitude toward generative AI moderates the association between their perceived AI-ness of advertisements and each of the ad/brand-level evaluations listed below. 
+
+**RQ3-1. Do consumers’ AI attitudes moderate the relationship between perceived AI-ness and perceived ad creativity?**
+
+**RQ3-2. Do consumers’ AI attitudes moderate the relationship between perceived AI-ness and perceived ad authenticity?**
+
+**RQ3-3. Do consumers’ AI attitudes moderate the relationship between perceived AI-ness and brand attitude?**
+
+Each of these questions is tested as an independent simple moderation model via interaction regression. Both perceived AI-ness and AI attitude are mean-centred prior to constructing the interaction terms. This ensures that the main effect of each predictor is interpretable at the mean of the other variable, without altering the interaction coefficient itself or its significance.
+
+```{r}
+df_long <- df_long %>%
+  mutate(
+    AIN_c = AIN - mean(AIN, na.rm = TRUE),
+    AIATT_c = AIATT - mean(AIATT, na.rm = TRUE)
+  )
+```
+
+### RQ3-1: AI Attitude x Perceived AI-ness -> Perceived Ad Creativity
+
+```{r}
+model_rq3_1 <- lm(CREA ~ AIN_c * AIATT_c + FAM + FAV + SEEN, data = df_long)
+coeftest(model_rq3_1, vcov = vcovCL(model_rq3_1, cluster = ~RespondentID))
+summary(model_rq3_1)$r.squared
+```
+
+### RQ3-2: AI Attitude x Perceived AI-ness -> Perceived Ad Authenticity
+
+```{r}
+model_rq3_2 <- lm(AUTH ~ AIN_c * AIATT_c + FAM + FAV + SEEN, data = df_long)
+coeftest(model_rq3_2, vcov = vcovCL(model_rq3_2, cluster = ~RespondentID))
+summary(model_rq3_2)$r.squared
+```
+
+### RQ3-3: AI Attitude x Perceived AI-ness -> Brand Attitude
+
+```{r}
+model_rq3_3 <- lm(BRATT ~ AIN_c * AIATT_c + FAM + FAV + SEEN, data = df_long)
+coeftest(model_rq3_3, vcov = vcovCL(model_rq3_3, cluster = ~RespondentID))
+summary(model_rq3_3)$r.squared
+```
+
+The key term of interest in each model is the interaction coefficient ('AIN_c:AIATT_c'). A significant positive interaction indicates that a more favourable AI attitude weakens (buffers) the negative association between perceived AI-ness and the outcome; a significant negative interaction would indicate it strengthens that negative association.
+
+### Sensitivity Analysis (SV/LD)
+
+Each interaction model is additionally re-estimated separately for each brand. As each respondent contributes only one row per ad-specific dataset, clustered standard errors are not required here. It should be noted that these ad-specific models have substantially less statistical power than the pooled models (n = 236 vs. N = 472), and interaction effects are typically harder to detect than main effects; a weaker or non-significant result in a single ad subset does not, on its own, contradict a significant pooled finding. 
+
+```{r}
+df_sv <- df_sv %>%
+  mutate(
+    AIN_c = AIN - mean(AIN, na.rm = TRUE),
+    AIATT_c = AIATT - mean(AIATT, na.rm = TRUE)
+  )
+df_ld <- df_ld %>%
+  mutate(
+    AIN_c = AIN - mean(AIN, na.rm = TRUE),
+    AIATT_c = AIATT - mean(AIATT, na.rm = TRUE)
+  )
+
+# SV only
+summary(lm(CREA ~ AIN_c * AIATT_c + FAM + FAV + SEEN, data = df_sv))$coefficients["AIN_c:AIATT_c", ]
+summary(lm(AUTH ~ AIN_c * AIATT_c + FAM + FAV + SEEN, data = df_sv))$coefficients["AIN_c:AIATT_c", ]
+summary(lm(BRATT ~ AIN_c * AIATT_c + FAM + FAV + SEEN, data = df_sv))$coefficients["AIN_c:AIATT_c", ]
+
+# LD only
+summary(lm(CREA ~ AIN_c * AIATT_c + FAM + FAV + SEEN, data = df_ld))$coefficients["AIN_c:AIATT_c", ]
+summary(lm(AUTH ~ AIN_c * AIATT_c + FAM + FAV + SEEN, data = df_ld))$coefficients["AIN_c:AIATT_c", ]
+summary(lm(BRATT ~ AIN_c * AIATT_c + FAM + FAV + SEEN, data = df_ld))$coefficients["AIN_c:AIATT_c", ]
+```
+
+### Visualisation: Interaction Plots (Simple Slopes by AI Attitude)
+
+To visualise the significant moderation effects observed above, predicted values of each outcome are plotted against perceived AI-ness at three representative levels of AI attitude: one standard deviation below the mean (Low), at the mean (Moderate), and one standard deviation above the mean (High).
+
+```{r}
+mean(df_long$AIATT, na.rm = TRUE)
+sd(df_long$AIATT, na.rm = TRUE)
+```
+
+```{r}
+aiatt_mean <- mean(df_long$AIATT, na.rm = TRUE)
+aiatt_sd <- sd(df_long$AIATT, na.rm = TRUE)
+ain_mean <- mean(df_long$AIN, na.rm = TRUE)
+
+aiatt_levels <- c(
+  Low = aiatt_mean - aiatt_sd,
+  Moderate = aiatt_mean,
+  High = aiatt_mean + aiatt_sd
+)
+
+fam_mean <- mean(df_long$FAM, na.rm = TRUE)
+fav_mean <- mean(df_long$FAV, na.rm = TRUE)
+seen_mean <- mean(df_long$SEEN, na.rm = TRUE)
+ain_range <- range(df_long$AIN, na.rm = TRUE)
+```
+
+A helper function generates predicted values across the observed range of perceived AI-ness, holding covariates at their sample means, for each of the three AI attitude levels above. Perceived AI-ness is re-centred here using the same sample mean used to fit the regression models, ensuring the predicted values are consistent with the fitted coefficients.
+
+```{r}
+make_interaction_data <- function(model, aiatt_levels, ain_range, fam_mean, fav_mean, seen_mean) {
+  do.call(rbind, lapply(names(aiatt_levels), function(lvl) {
+    aiatt_val <- aiatt_levels[[lvl]]
+    ain_seq <- seq(min(ain_range), max(ain_range), length.out = 50)
+    newdata <- data.frame(
+      AIN_c = ain_seq - ain_mean,
+      AIATT_c = aiatt_val - aiatt_mean,
+      FAM = fam_mean,
+      FAV = fav_mean,
+      SEEN = seen_mean
+    )
+    newdata$predicted <- predict(model, newdata = newdata)
+    newdata$AIN <- ain_seq
+    newdata$AI_Attitude <- factor(lvl, levels = c("Low", "Moderate", "High"))
+    newdata
+  }))
+}
+```
+
+### Figure 3: Perceived AI-ness x AI Attitude on Perceived Ad Creativity (RQ3-1)
+
+```{r, fig.width=6.5, fig.height=5}
+plot_data_crea <- make_interaction_data(model_rq3_1, aiatt_levels, ain_range, fam_mean, fav_mean, seen_mean)
+
+ggplot(plot_data_crea, aes(x = AIN, y = predicted, linetype = AI_Attitude)) +
+  geom_line(linewidth = 0.9, color = "#2C3E50") +
+  labs(x = "Perceived AI-ness", y = "Predicted Perceived Ad Creativity",
+       linetype = "AI Attitude",
+       subtitle = "Predicted values at low (-1 SD), moderate (mean), and high (+1 SD) AI attitude") +
+  theme_minimal(base_size = 13) +
+  theme(plot.subtitle = element_text(size = 9, color = "grey40"),
+        legend.position = "bottom",
+        panel.grid.minor = element_blank())
+```
+
+### Figure 4: Perceived AI-ness x AI Attitude on Perceived Ad Authenticity (RQ3-2)
+
+```{r, fig.width=6.5, fig.height=5}
+plot_data_auth <- make_interaction_data(model_rq3_2, aiatt_levels, ain_range, fam_mean, fav_mean, seen_mean)
+
+ggplot(plot_data_auth, aes(x = AIN, y = predicted, linetype = AI_Attitude)) +
+  geom_line(linewidth = 0.9, color = "#2C3E50") +
+  labs(x = "Perceived AI-ness", y = "Predicted Perceived Ad Authenticity",
+       linetype = "AI Attitude",
+       subtitle = "Predicted values at low (-1 SD), moderate (mean), and high (+1 SD) AI attitude") +
+  theme_minimal(base_size = 13) +
+  theme(plot.subtitle = element_text(size = 9, color = "grey40"),
+        legend.position = "bottom",
+        panel.grid.minor = element_blank())
+
+```
+
+### Figure 5: Perceived AI-ness x AI Attitude on Brand Attitude (RQ3-3)
+
+```{r, fig.width=6.5, fig.height=5}
+plot_data_bratt <- make_interaction_data(model_rq3_3, aiatt_levels, ain_range, fam_mean, fav_mean, seen_mean)
+
+ggplot(plot_data_bratt, aes(x = AIN, y = predicted, linetype = AI_Attitude)) +
+  geom_line(linewidth = 0.9, color = "#2C3E50") +
+  labs(x = "Perceived AI-ness", y = "Predicted Brand Attitude",
+       linetype = "AI Attitude",
+       subtitle = "Predicted values at low (-1 SD), moderate (mean), and high (+1 SD) AI attitude") +
+  theme_minimal(base_size = 13) +
+  theme(plot.subtitle = element_text(size = 9, color = "grey40"),
+        legend.position = "bottom",
+        panel.grid.minor = element_blank())
+```
+
+Across all three figures, the lines diverge as perceived AI-ness increases; the slope is the steepest (most negative) for respondents with low AI attitude, and flattest for those with high AI attitude, consistent with a buffering pattern in which a favourable AI attitude attenuates the negative associations between perceived AI-ness and each outcome. 
+
+### Simple Slope Estimates: Association between Perceived AI-ness and each outcome at Low/Moderate/High AI Attitude
+
+To complement the interaction plots above, the simple slope of perceived AI-ness is calculated at each of the three AI attitude levels. The simple slope equals the main effect of perceived AI-ness plus the interaction coefficient multiplied by the (centred) AI attitude value.
+
+```{r}
+compute_simple_slopes <- function(model, aiatt_levels, aiatt_mean) {
+  b_ain <- coef(model)["AIN_c"]
+  b_interaction <- coef(model)["AIN_c:AIATT_c"]
+
+  sapply(aiatt_levels, function(level) {
+    aiatt_c <- level - aiatt_mean
+    b_ain + b_interaction * aiatt_c
+  })
+}
+
+# Creativity (RQ3-1)
+compute_simple_slopes(model_rq3_1, aiatt_levels, aiatt_mean)
+
+# Authenticity (RQ3-2)
+compute_simple_slopes(model_rq3_2, aiatt_levels, aiatt_mean)
+
+# Brand Attitude (RQ3-3)
+compute_simple_slopes(model_rq3_3, aiatt_levels, aiatt_mean)
+```
 
